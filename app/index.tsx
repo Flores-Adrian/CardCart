@@ -1,6 +1,18 @@
+import { router } from "expo-router";
+import { useEffect } from "react";
 import { Image, ImageBackground, StyleSheet, Text, View } from "react-native";
 
-export default function HomeScreen() {
+export default function SplashScreen() {
+  // THIS IS SAMPLE SPLASH SCREEN
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.replace("/intro"); // this can later be changed to a different directory if needed
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // this is the main background for splash screen
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -12,11 +24,13 @@ export default function HomeScreen() {
           source={require("@/assets/images/Main_Logo.png")}
           style={styles.logo}
           resizeMode="contain"
-        ></Image>
+        />
+
         <Text style={styles.title}>
           Card
           <Text style={styles.purpleTitle}>Cart</Text>
         </Text>
+
         <Text style={styles.subtitle}> Run your table like a pro! </Text>
       </ImageBackground>
     </View>
@@ -38,7 +52,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "black",
-    color: "#FFF",
   },
   title: {
     color: "#FEFDFE",
