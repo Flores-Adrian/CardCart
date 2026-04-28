@@ -1,11 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import {
-    ImageBackground,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
+  ImageBackground,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 export default function Intro() {
@@ -15,6 +16,7 @@ export default function Intro() {
     "Sales & Payments",
     "Analytics & Reports",
   ];
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -46,7 +48,7 @@ export default function Intro() {
             styles.button,
             pressed && { transform: [{ scale: 0.97 }] },
           ]}
-          onPress={() => router.push("/signup")}
+          onPress={() => router.push("/signUp")}
         >
           <Text style={styles.buttonText}> Get Started </Text>
         </Pressable>
@@ -54,7 +56,12 @@ export default function Intro() {
         {/** Sign Up Text */}
         <Text style={styles.signUpText}>
           Already have an account?
-          <Text style={styles.signUpTextPurple}> Log In</Text>
+          <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={() => router.push("/logIn")}
+          >
+            <Text style={styles.signUpTextPurple}> Log In</Text>
+          </TouchableOpacity>
         </Text>
       </ImageBackground>
     </View>
@@ -131,5 +138,11 @@ const styles = StyleSheet.create({
 
   signUpTextPurple: {
     color: "#854FD5",
+    fontSize: 15,
+    fontWeight: 700,
+    lineHeight: 17.906,
+    letterSpacing: 1.8,
+    textAlign: "center",
+    width: 350,
   },
 });
