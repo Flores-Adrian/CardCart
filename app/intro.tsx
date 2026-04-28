@@ -1,3 +1,4 @@
+import AppButton from "@/components/AppButton";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import {
@@ -5,7 +6,6 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -43,25 +43,22 @@ export default function Intro() {
         ))}
 
         {/** BUTTON... USE PRESSABLE */}
-        <Pressable
-          style={({ pressed }) => [
-            styles.button,
-            pressed && { transform: [{ scale: 0.97 }] },
-          ]}
-          onPress={() => router.push("/signUp")}
-        >
-          <Text style={styles.buttonText}> Get Started </Text>
-        </Pressable>
+        <AppButton
+          title="Get Started"
+          onPress={() => router.replace("/signUp")}
+          buttonStyle={styles.button}
+          textStyle={styles.buttonText}
+        />
 
         {/** Sign Up Text */}
         <Text style={styles.signUpText}>
           Already have an account?
-          <TouchableOpacity
-            activeOpacity={0.7}
+          <Pressable
             onPress={() => router.push("/logIn")}
+            style={({ pressed }) => [pressed && { opacity: 0.7 }]}
           >
-            <Text style={styles.signUpTextPurple}> Log In</Text>
-          </TouchableOpacity>
+            <Text style={styles.signUpTextPurple}> Login In </Text>
+          </Pressable>
         </Text>
       </ImageBackground>
     </View>
@@ -118,7 +115,7 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: "#FFFF",
+    color: "#FFF",
     fontSize: 20,
     fontWeight: 700,
     lineHeight: 23.87,

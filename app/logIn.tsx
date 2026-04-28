@@ -1,3 +1,4 @@
+import AppButton from "@/components/AppButton";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -65,9 +66,12 @@ export default function LogInScreen() {
           <Text style={styles.forgotPassword}> Forgot password? </Text>
         </Pressable>
 
-        <Pressable style={styles.loginButton}>
-          <Text style={styles.loginButtonText}> Log In </Text>
-        </Pressable>
+        <AppButton
+          title="Log In"
+          onPress={() => router.replace("/(tabs)/mainMenu")}
+          buttonStyle={styles.loginButton}
+          textStyle={styles.loginButtonText}
+        />
 
         <Text style={styles.continueText}>or continue with</Text>
 
@@ -90,7 +94,7 @@ export default function LogInScreen() {
         <Text style={styles.signUpText}>
           Don&apos;t have an account?{" "}
           <Text
-            style={styles.signUpPurple}
+            style={styles.signUpTextPurple}
             onPress={() => router.push("/signup")}
           >
             Sign Up
@@ -210,7 +214,7 @@ const styles = StyleSheet.create({
   },
 
   signUpText: {
-    color: "#FFF",
+    color: "#FFFF",
     fontWeight: "700",
     fontSize: 14,
     textAlign: "center",
