@@ -85,12 +85,15 @@ const styles = StyleSheet.create({
     width: 342,
     marginTop: 42,
     marginBottom: 55,
+    textAlign: "center",
+    alignSelf: "center",
   },
 
   listItem: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 40, // space between each bullet point
+    alignSelf: "center",
   },
 
   listText: {
@@ -112,6 +115,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
+    alignSelf: "center",
   },
 
   buttonText: {
@@ -131,6 +135,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: 350,
     marginTop: 30,
+    alignSelf: "center",
   },
 
   signUpTextPurple: {

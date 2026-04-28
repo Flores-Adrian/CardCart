@@ -95,7 +95,7 @@ export default function LogInScreen() {
           Don&apos;t have an account?{" "}
           <Text
             style={styles.signUpTextPurple}
-            onPress={() => router.push("/signup")}
+            onPress={() => router.push("/signUp")}
           >
             Sign Up
           </Text>
@@ -121,12 +121,14 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 38,
     fontWeight: "700",
+    textAlign: "center",
   },
   titleInstruction: {
     color: "#FFF",
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 45,
+    textAlign: "center",
   },
 
   inputTitle: {
