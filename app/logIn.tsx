@@ -24,6 +24,13 @@ export default function LogInScreen() {
         resizeMode="cover"
         style={styles.imgBackground}
       >
+        <Pressable
+          style={styles.backButton}
+          onPress={() => router.replace("/intro")}
+        >
+          <Ionicons name="chevron-back" size={28} color="#FFF" />
+        </Pressable>
+
         <Text style={styles.title}>Welcome Back!</Text>
         <Text style={styles.titleInstruction}> Log in to your account</Text>
 
@@ -114,6 +121,12 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 72,
+  },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: "center",
   },
 
   title: {

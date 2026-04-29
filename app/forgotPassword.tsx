@@ -3,12 +3,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    ImageBackground,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ImageBackground,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 export default function ForgotPasswordScreen() {
@@ -47,10 +47,7 @@ export default function ForgotPasswordScreen() {
           autoCapitalize="none"
         />
 
-        <AppButton
-          title="Continue"
-          onPress={() => router.replace("/(tabs)/mainMenu")}
-        />
+        <AppButton title="Continue" onPress={() => router.replace("/logIn")} />
       </ImageBackground>
     </View>
   );
@@ -78,6 +75,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "700",
     textAlign: "center",
+    marginTop: 150,
+    marginBottom: 20,
   },
 
   titleInstruction: {
@@ -94,7 +93,7 @@ const styles = StyleSheet.create({
     color: "#FFF",
     fontSize: 14,
     fontWeight: "700",
-    marginTop: 20,
+    marginTop: 40,
     marginLeft: 10,
     marginBottom: 8,
   },
