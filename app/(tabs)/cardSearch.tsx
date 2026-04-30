@@ -1,19 +1,20 @@
 // Import API function + card type
 import { searchPokemonCards, type PokemonCard } from "@/services/pokemonApi";
+import { Ionicons } from "@expo/vector-icons";
 
 // React hook for storing live data
 import { useState } from "react";
 
 import {
-    ActivityIndicator,
-    Image,
-    ImageBackground,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Image,
+  ImageBackground,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 export default function CardSearch() {
@@ -53,6 +54,20 @@ export default function CardSearch() {
     }
   };
 
+  // Create function TO GET PRICING OF CARD
+  const getMarketPrice = (card: PokemonCard) => {
+    const prices = card.tcgplayer?.prices;
+
+    return (
+      prices?.holofoil?.market ??
+      prices?.normal?.market ??
+      prices?.["1stEditionHolofoil"]?.market ??
+      prices?.["1stEditionNormal"]?.market ??
+      prices?.reverseHolofoil?.market ??
+      null
+    );
+  };
+
   return (
     <View style={styles.container}>
       <ImageBackground
@@ -62,6 +77,7 @@ export default function CardSearch() {
       >
         <Text style={styles.title}> CARD SEARCH </Text>
 
+        {/* <View style={styles.searchBoxWithGlass}> */}
         <TextInput
           style={styles.searchBox}
           placeholder="Search for any card!"
@@ -70,6 +86,12 @@ export default function CardSearch() {
           onChangeText={setSearchText}
           autoCapitalize="none"
         />
+
+        {/* * Serach Button
+          <Pressable onPress={handleSearch}>
+            <Ionicons name={"search"} size={24} color={"#FFF"} />
+          </Pressable>
+        </View> */}
 
         {/** Search Button */}
         <Pressable style={styles.searchButton} onPress={handleSearch}>
@@ -108,9 +130,26 @@ export default function CardSearch() {
 
                 <Text style={styles.cardDetail}>
                   {card.rarity ?? "No rarity listed"}
+                  <Text style={styles.cardDetail}> • #{card.number}</Text>
                 </Text>
 
-                <Text style={styles.cardDetail}>#{card.number}</Text>
+                <Text style={styles.cardPriceStats}>
+                  $
+                  {card.tcgplayer?.prices?.holofoil?.market ??
+                    card.tcgplayer?.prices?.reverseHolofoil?.market ??
+                    card.tcgplayer?.prices?.normal?.market ??
+                    card.tcgplayer?.prices?.["1stEditionHolofoil"]?.market ??
+                    card.tcgplayer?.prices?.["1stEditionNormal"]?.market ??
+                    "missing"}
+                  <Text> QNTY: 0 </Text>
+                </Text>
+
+                {/** BUTTON TO ADD TO COLLECTION */}
+                <Pressable style={styles.addToCollectionButton}>
+                  <Text style={styles.addToCollectionButtonText}>
+                    <Ionicons name="add" size={20} color="#FFF" />
+                  </Text>
+                </Pressable>
               </View>
             </View>
           ))}
@@ -139,6 +178,16 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
+  searchBoxWithGlass: {
+    width: "100%",
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "rgba(52, 52, 52, 0.8)",
+    paddingHorizontal: 4,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+
   searchBox: {
     width: "100%",
     height: 56,
@@ -150,6 +199,12 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
 
+  // searchBox: {
+  //   flex: 1,
+  //   color: "#FFF",
+  //   fontSize: 16,
+  // },
+
   searchButton: {
     height: 54,
     borderRadius: 18,
@@ -157,6 +212,24 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+  },
+
+  addToCollectionButton: {
+    // backgroundColor: "#2e2d32",
+    backgroundColor: "transparent",
+    borderColor: "#2e2d32",
+    borderWidth: 1,
+    marginTop: 5, // whatever is below this, KEEP AND DON'T ALTER FOR BUTTON
+    height: 30,
+    width: 175,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    // borderWidth: 1,
+  },
+
+  addToCollectionButtonText: {
+    // borderWidth: 2,
   },
 
   searchButtonText: {
@@ -174,42 +247,55 @@ const styles = StyleSheet.create({
 
   cardList: {
     paddingBottom: 40,
-    //flexDirection: "row",
-    //flexWrap: "wrap",
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingHorizontal: 1, // how big we make each card (including background, img, etc.)
   },
 
   cardItem: {
-    //flexDirection: "column",
-    flexDirection: "row",
+    //flexDirection: "column-reverse",
+    width: "49%", // gap  between cards (left-right)
     backgroundColor: "rgba(20, 20, 24, 0.75)",
     borderRadius: 18,
-    padding: 12,
-    marginBottom: 14,
+    padding: 6, // sizing of picture (less = bigger)
+    marginBottom: 16,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)",
+    alignItems: "center", // center image
   },
 
   cardImage: {
-    width: 82,
-    height: 115,
-    marginRight: 14,
+    width: "100%", // before -> 82
+    aspectRatio: 2 / 3,
+    borderRadius: 8,
   },
 
   cardInfo: {
-    flex: 1,
-    justifyContent: "center",
+    // justifyContent: "center",
+    width: "100%", // makes sure text doesn't overflow
+    alignItems: "flex-start",
   },
 
   cardName: {
     color: "#FFF",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
-    marginBottom: 6,
+    marginBottom: 4,
   },
 
   cardDetail: {
     color: "rgba(255, 255, 255, 0.7)",
-    fontSize: 13,
-    marginBottom: 3,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+
+  cardPriceStats: {
+    color: "rgba(255, 255, 255, 0.7)",
+    fontSize: 10,
+    marginBottom: 2,
+    marginTop: 10,
+    textAlign: "center",
+    alignSelf: "center",
   },
 });

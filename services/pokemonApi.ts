@@ -2,6 +2,15 @@ const API_KEY = process.env.EXPO_PUBLIC_POKEMON_TCG_API_KEY;
 // main website for Pokemon TCG API
 const BASE_URL = "https://api.pokemontcg.io/v2";
 
+// Create blueprint for each cardprice TYPE FOR TCGPLAYER, check docs what they mean
+export type CardPrice = {
+  low?: number;
+  mid?: number;
+  high?: number;
+  market?: number;
+  directlow?: number;
+};
+
 // create blueprint for each card object (this WILL HELP WITH AUTOCOMPLETE + CLEANER CODE)
 export type PokemonCard = {
   // unique card id
@@ -25,6 +34,19 @@ export type PokemonCard = {
 
   // card number set
   number?: string;
+
+  // artist of card
+  tcgplayer?: {
+    url?: string;
+    updatedAt?: string;
+    prices?: {
+      normal?: CardPrice;
+      holofoil?: CardPrice;
+      reverseHolofoil?: CardPrice;
+      "1stEditionHolofoil"?: CardPrice;
+      "1stEditionNormal"?: CardPrice;
+    };
+  };
 };
 
 // export function that is reusable that can MAKE CARDS SEARCHABLE
@@ -41,7 +63,7 @@ export async function searchPokemonCards(
   // BUILD THE ACTUAL URL RQUEST
   // q=name:pikachu* means find names that start with "pikachu"
   // pageSize=12 limits results to 12 cards
-  const url = `${BASE_URL}/cards?q=name:${encodeURIComponent(query)}*&pageSize=12`;
+  const url = `${BASE_URL}/cards?q=name:${encodeURIComponent(query)}*&pageSize=20`;
 
   // Make GET request to API
   const response = await fetch(url, {
