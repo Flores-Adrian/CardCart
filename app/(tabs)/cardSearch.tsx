@@ -1,5 +1,9 @@
 // Import API function + card type
-import { searchPokemonCards, type PokemonCard } from "@/services/pokemonApi";
+import {
+  formatCardName,
+  searchPokemonCards,
+  type PokemonCard,
+} from "@/services/pokemonApi";
 import { Ionicons } from "@expo/vector-icons";
 
 // React hook for storing live data
@@ -124,7 +128,7 @@ export default function CardSearch() {
 
               {/** GET CARD INFO */}
               <View style={styles.cardInfo}>
-                <Text style={styles.cardName}>{card.name}</Text>
+                <Text style={styles.cardName}>{formatCardName(card.name)}</Text>
 
                 <Text style={styles.cardDetail}>{card.set?.name}</Text>
 
@@ -132,6 +136,10 @@ export default function CardSearch() {
                   {card.rarity ?? "No rarity listed"}
                   <Text style={styles.cardDetail}> • #{card.number}</Text>
                 </Text>
+
+                {/* <Text style={styles.cardDetail}>
+                  {card.subtypes?.join(", ") ?? "No subtype listed"}
+                </Text> */}
 
                 <Text style={styles.cardPriceStats}>
                   $
