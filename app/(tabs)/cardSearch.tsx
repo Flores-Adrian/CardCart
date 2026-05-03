@@ -4,7 +4,7 @@ import {
   searchPokemonCards,
   type PokemonCard,
 } from "@/services/pokemonApi";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 
 // React hook for storing live data
 import { useState } from "react";
@@ -79,28 +79,43 @@ export default function CardSearch() {
         resizeMode="cover"
         style={styles.imgBackground}
       >
-        <Text style={styles.title}> CARD SEARCH </Text>
-
         {/* <View style={styles.searchBoxWithGlass}> */}
-        <TextInput
-          style={styles.searchBox}
-          placeholder="Search for any card!"
-          placeholderTextColor="#777"
-          value={searchText}
-          onChangeText={setSearchText}
-          autoCapitalize="none"
-        />
-
-        {/* * Serach Button
+        <View style={styles.searchBox}>
+          <TextInput
+            style={styles.searchBoxInput}
+            placeholder="Search for any card!"
+            placeholderTextColor="#777"
+            value={searchText}
+            onChangeText={setSearchText}
+            autoCapitalize="none"
+          />
           <Pressable onPress={handleSearch}>
             <Ionicons name={"search"} size={24} color={"#FFF"} />
           </Pressable>
-        </View> */}
+        </View>
+
+        <View style={styles.searchOptions}>
+          <Pressable style={styles.searchOptionsButton}>
+            <Text style={styles.searchOptionsButtonText}>
+              <Ionicons name="star" size={14} color="#FFF" /> Favorites
+            </Text>
+          </Pressable>
+          <Pressable style={styles.searchOptionsButton}>
+            <Text style={styles.searchOptionsButtonText}>
+              <Ionicons name="filter" size={14} color="#FFF" /> Filter
+            </Text>
+          </Pressable>
+          <Pressable style={styles.searchOptionsButton}>
+            <Text style={styles.searchOptionsButtonText}>
+              <FontAwesome6 name="sort" size={14} color="#FFF" /> Sort
+            </Text>
+          </Pressable>
+        </View>
 
         {/** Search Button */}
-        <Pressable style={styles.searchButton} onPress={handleSearch}>
+        {/* <Pressable style={styles.searchButton} onPress={handleSearch}>
           <Text style={styles.searchButtonText}> Search </Text>
-        </Pressable>
+        </Pressable> */}
 
         {/** create loading spinner */}
         {loading && <ActivityIndicator size="large" color="#854FD5" />}
@@ -178,33 +193,30 @@ const styles = StyleSheet.create({
     paddingTop: 70,
   },
 
-  title: {
-    color: "#FFF",
-    fontSize: 30,
-    fontWeight: "700",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-
-  searchBoxWithGlass: {
-    width: "100%",
-    height: 58,
-    borderRadius: 18,
-    backgroundColor: "rgba(52, 52, 52, 0.8)",
-    paddingHorizontal: 4,
-    flexDirection: "row",
-    alignItems: "center",
-  },
+  // title: {
+  //   color: "#FFF",
+  //   fontSize: 30,
+  //   fontWeight: "700",
+  //   textAlign: "center",
+  //   marginBottom: 24,
+  // },
 
   searchBox: {
     width: "100%",
-    height: 56,
+    height: 58,
     borderRadius: 18,
     backgroundColor: "rgba(52, 52, 52, 0.85)",
-    color: "#FFF",
     paddingHorizontal: 18,
+    flexDirection: "row",
+    alignItems: "center",
     fontSize: 16,
     marginBottom: 14,
+  },
+
+  searchBoxInput: {
+    flex: 1,
+    color: "#FFF",
+    fontSize: 16,
   },
 
   // searchBox: {
@@ -213,13 +225,27 @@ const styles = StyleSheet.create({
   //   fontSize: 16,
   // },
 
-  searchButton: {
-    height: 54,
-    borderRadius: 18,
-    backgroundColor: "#854FD5",
+  searchOptions: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 15,
+  },
+
+  searchOptionsButton: {
+    height: 30,
+    width: "33%",
+    borderRadius: 10,
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 20,
+    borderColor: "white",
+    borderWidth: 1,
+  },
+
+  searchOptionsButtonText: {
+    color: "#FFF",
+    fontWeight: "700",
   },
 
   addToCollectionButton: {

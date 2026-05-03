@@ -53,22 +53,50 @@ export type PokemonCard = {
 };
 
 // helps simplify/normalize  user input (charizard-ex => charizard ex FOR SEARCH)
+// CONVERT user input into simple searchable words
 function normalizeSearchInput(input: string) {
-  return input
-    .toLowerCase()
-    .replace(/-/g, " ")
-    .replace(/gold star/g, "★")
-    .replace(/star/g, "★")
+  return input.toLowerCase().replace(/-/g, " ").trim();
+}
+
+// check whether the user is searching for gold star cards
+function isGoldStarSearch(input: string) {
+  const normalized = normalizeSearchInput(input);
+
+  return (
+    normalized.includes("gold star") ||
+    normalized.includes("★") ||
+    normalized === "star"
+  );
+}
+
+// this is just to get the pokemon names that are in the API
+// EX: "pikachu gold star" -> "pikachu"
+// EX: "gold star" -> ""
+function getBasePokemonSearch(input: string) {
+  return normalizeSearchInput(input)
+    .replace(/gold star/g, "")
+    .replace(/star/g, "")
+    .replace(/★/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
 
 // function to create "smarter" queries (more variaty when getting card outputs)
+// this helps build a safe API query without special symbols
+// "charizard ex" -> "name: charizard* name:ex*"
+// "pikachu gold star" -> "pikachu"
+// "gold star" -> "supertype: pokemon"
 function buildNameSearchQuery(query: string) {
-  const normalized = normalizeSearchInput(query);
+  const goldStarSerach = isGoldStarSearch(query);
+  const baseSearch = goldStarSerach
+    ? getBasePokemonSearch(query)
+    : normalizeSearchInput(query);
 
+  if (!baseSearch) {
+    return "supertype:pokemon";
+  }
   // return query while separating each individual word to it ("Pikachu ex") -> name: pikachu* name: ex*
-  return normalized
+  return baseSearch
     .split(" ")
     .map((word) => `name:${word}*`)
     .join(" ");
@@ -79,22 +107,32 @@ export function formatCardName(name: string) {
   return name
     .replace(/-/g, " ")
     .replace(/★/g, "Gold Star")
-    .replace(/δ/g, "(Delta Species)")
+    .replace(/δ/g, "Delta Species")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
 // serach only main pokemon name (ex. pikachu), once results are returned, we filter locally by the formatted display name
+// API fetches safe results first, then this filters the results locally.
 function matchesFormattedName(cardName: string, userQuery: string) {
   //lowercase card name
   const formattedName = formatCardName(cardName).toLowerCase();
   //get user input
-  const normalizedQuery = userQuery.toLowerCase().replace(/-/g, " ").trim();
+  const normalizedQuery = normalizeSearchInput(userQuery);
 
-  //check if card name has what user searched up
-  return (
-    formattedName.includes(normalizedQuery) ||
-    normalizedQuery.includes(formattedName)
-  );
+  if (isGoldStarSearch(userQuery)) {
+    const baseSearch = getBasePokemonSearch(userQuery);
+
+    // if user searches 'gold star' return any card with ★
+    if (!baseSearch) {
+      return cardName.includes("★");
+    }
+
+    // if user searches "pikachu gold star", match both pikachu and ★
+    return formattedName.includes(baseSearch) && cardName.includes("★");
+  }
+
+  return formattedName.includes(normalizedQuery);
 }
 
 // export function that is reusable that can MAKE CARDS SEARCHABLE
@@ -115,10 +153,18 @@ export async function searchPokemonCards(
   // q=name:pikachu* means find names that start with "pikachu"
   // pageSize=12 limits results to 12 cards
 
-  // give more results and try to sorter by higherpriced/popular cards first (allows us to search for ex, gx, etc.)
+  // TEMP URL
   const url = `${BASE_URL}/cards?q=${encodeURIComponent(
     searchQuery,
-  )}&pageSize=50&orderBy=-tcgplayer.prices.holofoil.market`;
+  )}&pageSize=250`;
+
+  // give more results and try to sorter by higherpriced/popular cards first (allows us to search for ex, gx, etc.)
+  // const url = `${BASE_URL}/cards?q=${encodeURIComponent(
+  //   searchQuery,
+  // )}&pageSize=50&orderBy=-tcgplayer.prices.holofoil.market`;
+
+  console.log("Search Query: ", searchQuery);
+  console.log("URL: ", url);
 
   // const url = `${BASE_URL}/cards?q=${encodeURIComponent(
   //   searchQuery,
