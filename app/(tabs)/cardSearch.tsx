@@ -9,6 +9,8 @@ import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 // React hook for storing live data
 import { useState } from "react";
 
+import { router } from "expo-router";
+
 import {
   ActivityIndicator,
   Image,
@@ -36,6 +38,7 @@ export default function CardSearch() {
 
   // create function for when the user clicks the search button
   const handleSearch = async () => {
+    //  make try catch just to prevent from being in a loop forever/crash
     try {
       // show loading spinner
       setLoading(true);
@@ -132,14 +135,20 @@ export default function CardSearch() {
           {/** Now LOOP THROUGH EACH CARD THAT IS RETURNED */}
           {cards.map((card) => (
             <View key={card.id} style={styles.cardItem}>
-              {/** Card Image */}
-              {card.images?.small && (
-                <Image
-                  source={{ uri: card.images.small }}
-                  style={styles.cardImage}
-                  resizeMode="contain"
-                />
-              )}
+              {/** Card Image, click to expand */}
+              <Pressable
+                key={card.id}
+                onPress={() => router.push(`/card/${card.id}`)}
+                style={({ pressed }) => [pressed && { opacity: 0.7 }]}
+              >
+                {card.images?.small && (
+                  <Image
+                    source={{ uri: card.images.small }}
+                    style={styles.cardImage}
+                    resizeMode="contain"
+                  />
+                )}
+              </Pressable>
 
               {/** GET CARD INFO */}
               <View style={styles.cardInfo}>

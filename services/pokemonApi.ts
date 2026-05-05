@@ -52,6 +52,30 @@ export type PokemonCard = {
   subtypes?: string[];
 };
 
+// allows us to FETCH A SINGLE CARD BY ID
+export async function getPokemonCardById(id: string): Promise<PokemonCard> {
+  // build API URL with UNIQUE ID
+  const url = `${BASE_URL}/cards/${id}`;
+
+  // Send request
+  const response = await fetch(url, {
+    headers: {
+      "X-Api-Key": API_KEY ?? "",
+    },
+  });
+
+  // handle API error
+  if (!response.ok) {
+    throw new Error("Failed to fetch card details.");
+  }
+
+  // convert response to JSON
+  const result = await response.json();
+
+  // ONLY return the card object
+  return result.data;
+}
+
 // helps simplify/normalize  user input (charizard-ex => charizard ex FOR SEARCH)
 // CONVERT user input into simple searchable words
 function normalizeSearchInput(input: string) {
@@ -112,7 +136,7 @@ export function formatCardName(name: string) {
     .trim();
 }
 
-// serach only main pokemon name (ex. pikachu), once results are returned, we filter locally by the formatted display name
+// we filter locally by the formatted display name
 // API fetches safe results first, then this filters the results locally.
 function matchesFormattedName(cardName: string, userQuery: string) {
   //lowercase card name
@@ -163,12 +187,9 @@ export async function searchPokemonCards(
   //   searchQuery,
   // )}&pageSize=50&orderBy=-tcgplayer.prices.holofoil.market`;
 
+  // DEBUG PURPOSES, ERASE LATER
   console.log("Search Query: ", searchQuery);
   console.log("URL: ", url);
-
-  // const url = `${BASE_URL}/cards?q=${encodeURIComponent(
-  //   searchQuery,
-  // )}&pageSize=50`;
 
   // Make GET request to API
   const response = await fetch(url, {
