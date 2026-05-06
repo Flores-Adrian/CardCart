@@ -4,6 +4,9 @@ import {
   searchPokemonCards,
   type PokemonCard,
 } from "@/services/pokemonApi";
+
+import { addCardToInventory } from "@/services/inventoryService";
+
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 
 // React hook for storing live data
@@ -35,6 +38,16 @@ export default function CardSearch() {
 
   // Error Message status
   const [errorMessage, setErrorMessage] = useState("");
+
+  // this is to check if addInventory works and debug
+  const handleAddToInventory = async (card: PokemonCard) => {
+    try {
+      await addCardToInventory(card);
+      console.log(`${card.name} added to inventory`);
+    } catch (error) {
+      console.log("Failed to add card: ", error);
+    }
+  };
 
   // create function for when the user clicks the search button
   const handleSearch = async () => {
@@ -177,7 +190,10 @@ export default function CardSearch() {
                 </Text>
 
                 {/** BUTTON TO ADD TO COLLECTION */}
-                <Pressable style={styles.addToCollectionButton}>
+                <Pressable
+                  style={styles.addToCollectionButton}
+                  onPress={() => handleAddToInventory(card)}
+                >
                   <Text style={styles.addToCollectionButtonText}>
                     <Ionicons name="add" size={20} color="#FFF" />
                   </Text>

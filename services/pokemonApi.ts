@@ -52,6 +52,28 @@ export type PokemonCard = {
   subtypes?: string[];
 };
 
+// alows us to FETCH A THE SET OF THE SPECIFIC CARD THAT IS OPEN
+export async function getPokemonSetById(set?: string): Promise<PokemonCard> {
+  const url = `${BASE_URL}/sets/${set}`;
+
+  // send request
+  const response = await fetch(url, {
+    headers: {
+      "X-Api-Key": API_KEY ?? "",
+    },
+  });
+
+  // handle API ERROR
+  if (!response.ok) {
+    console.log("Failed to fetch card's set details.");
+  }
+
+  const result = await response.json();
+
+  // only return the card object
+  return result.data;
+}
+
 // allows us to FETCH A SINGLE CARD BY ID
 export async function getPokemonCardById(id: string): Promise<PokemonCard> {
   // build API URL with UNIQUE ID

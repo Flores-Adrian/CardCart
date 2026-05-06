@@ -4,11 +4,9 @@ import {
   type PokemonCard,
 } from "@/services/pokemonApi";
 import { Ionicons } from "@expo/vector-icons";
-
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Image,
   ImageBackground,
   Pressable,
@@ -17,6 +15,9 @@ import {
   Text,
   View,
 } from "react-native";
+
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 
 export default function CardExpansion() {
   // this allows us to get the dynamic route parameter
@@ -29,6 +30,12 @@ export default function CardExpansion() {
   // loading state for spinner
   const [loading, setLoading] = useState(true);
 
+  // Animation value for sizing
+  const scaleAnimation = useRef(new Animated.Value(0.9)).current;
+
+  // Animation value for fade
+  const fadeAnimation = useRef(new Animated.Value(0)).current;
+
   // this would run when the component loads OR [id] changes
   useEffect(() => {
     async function loadCard() {
@@ -40,6 +47,26 @@ export default function CardExpansion() {
 
         // save card into state
         setCard(result);
+
+        // START animation once data LOADS
+        Animated.parallel([
+          Animated.timing(scaleAnimation, {
+            toValue: 1, // grow to full size
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(fadeAnimation, {
+            toValue: 1, // fade in
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          // Animated.spring(scaleAnimation, {
+          //   toValue: 1,
+          //   friction: 9,
+          //   tension: 350,
+          //   useNativeDriver: true,
+          // }),
+        ]).start();
       } catch (error) {
         console.log("Card detail screen error", error);
         setCard(null);
@@ -88,21 +115,28 @@ export default function CardExpansion() {
         style={styles.imgBackground}
       >
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/** BACK BUTTON */}
-          <Pressable
-            style={styles.backButton}
-            onPress={() => router.back()} // goes back to previous screen (card search)
+          <Animated.View
+            style={{
+              transform: [{ scale: scaleAnimation }],
+              opacity: fadeAnimation,
+            }}
           >
-            <Ionicons name="chevron-back" size={30} color="#FFF" />
-          </Pressable>
-          {/** LARD CARD IMAGE */}
-          <View style={styles.cardImageBorder}>
-            <Image
-              source={{ uri: card.images?.large ?? card.images?.small }}
-              style={styles.largeCardImage}
-              resizeMode="contain"
-            />
-          </View>
+            {/** BACK BUTTON */}
+            <Pressable
+              style={styles.backButton}
+              onPress={() => router.back()} // goes back to previous screen (card search)
+            >
+              <Ionicons name="chevron-back" size={30} color="#FFF" />
+            </Pressable>
+            {/** LARD CARD IMAGE */}
+            <View style={styles.cardImageBorder}>
+              <Image
+                source={{ uri: card.images?.large ?? card.images?.small }}
+                style={styles.largeCardImage}
+                resizeMode="contain"
+              />
+            </View>
+          </Animated.View>
 
           <View style={styles.titleNumBox}>
             <Text style={styles.cardName}>{formatCardName(card.name)}</Text>
@@ -180,10 +214,10 @@ const styles = StyleSheet.create({
   },
 
   cardImageBorder: {
-    borderWidth: 0.2,
-    borderColor: "#854FD5",
+    // borderWidth: 1,
+    //borderColor: "#c1a3ed", //"#c1a3ed"
     padding: 20,
-    borderRadius: 30,
+    borderRadius: 60,
   },
 
   largeCardImage: {
