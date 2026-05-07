@@ -1,5 +1,5 @@
 import { getInventory, type InventoryItem } from "@/services/inventoryService";
-import { AntDesign, Feather, FontAwesome5 } from "@expo/vector-icons";
+import { AntDesign, Feather, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -25,6 +25,25 @@ export default function Inventory() {
 
   // this would control how inventory is sorted
   const [sortBy, setSortBy] = useState<"name" | "price" | "quantity">("name");
+
+  // this would be for sorting options for dropdown
+  const [sortOpen, setSortOpen] = useState(false);
+
+  // makes sorting easier for dropdown with this
+  const sortOptions: {
+    label: string;
+    value: "name" | "price" | "quantity";
+  }[] = [
+    { label: "Name A-Z", value: "name" },
+    { label: "Highest Price", value: "price" },
+    { label: "Highest Quantity", value: "quantity" },
+  ];
+
+  const getSortLabel = (value: "name" | "price" | "quantity") => {
+    return (
+      sortOptions.find((option) => option.value === value)?.label ?? "Name A-Z"
+    );
+  };
 
   // this would run everytime the user opens this tab/screen
   useFocusEffect(
@@ -110,13 +129,77 @@ export default function Inventory() {
             <Text style={styles.statLabel}> Total Value </Text>
           </View>
 
-          {/* <View style={styles.statBox}>
-            <Text style={styles.statValue}> N/A</Text>
-          </View> */}
+          <View style={styles.statBox}>
+            <Text style={styles.statValue}>
+              <FontAwesome5 name="chart-line" size={24} color="#854FD5" />
+            </Text>
+            <Text style={styles.statValue}> 12.4% </Text>
+            <Text style={styles.statLabel}> Change </Text>
+          </View>
+        </View>
+
+        {/** SORT BUTTONS WITH GRID/LIST VIEW */}
+        <View style={styles.controlRow}>
+          <View style={styles.dropdownWrapper}>
+            <Pressable
+              style={styles.dropdownButton}
+              onPress={() => setSortOpen(!sortOpen)}
+            >
+              <Text style={styles.dropdownText}>
+                Sort by: {getSortLabel(sortBy)}
+              </Text>
+              <Ionicons
+                name={sortOpen ? "chevron-up" : "chevron-down"}
+                size={20}
+                color="#FFF"
+              />
+            </Pressable>
+
+            {/** add options available */}
+            {sortOpen && (
+              <View style={styles.dropdownMenu}>
+                {sortOptions.map((option) => (
+                  <Pressable
+                    key={option.value}
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      setSortBy(option.value);
+                      setSortOpen(false);
+                    }}
+                  >
+                    <Text style={styles.dropdownItemText}>{option.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/** Grid/List toggle */}
+          <View style={styles.viewToggle}>
+            <Pressable
+              style={[
+                styles.iconButton,
+                viewMode === "grid" && styles.activeIconButton,
+              ]}
+              onPress={() => setViewMode("grid")}
+            >
+              <Feather name="grid" size={24} color="white" />
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.iconButton,
+                viewMode === "list" && styles.activeIconButton,
+              ]}
+              onPress={() => setViewMode("list")}
+            >
+              <AntDesign name="unordered-list" size={24} color="#FFF" />
+            </Pressable>
+          </View>
         </View>
 
         {/** SORT BUTTONS */}
-
+        {/* 
         <View style={styles.sortRow}>
           <Pressable
             style={[styles.sortButton, sortBy === "name" && styles.activeSort]}
@@ -141,10 +224,10 @@ export default function Inventory() {
           >
             <Text style={styles.sortText}> QTY </Text>
           </Pressable>
-        </View>
+        </View> */}
 
         {/** Grid/List toggle */}
-        <View style={styles.toggleRow}>
+        {/* <View style={styles.toggleRow}>
           <Pressable
             style={[
               styles.toggleButton,
@@ -164,7 +247,7 @@ export default function Inventory() {
           >
             <AntDesign name="unordered-list" size={24} color="#FFF" />
           </Pressable>
-        </View>
+        </View> */}
 
         {/** DISPLAY CARD INFORMATION */}
         <ScrollView showsVerticalScrollIndicator={false}>
@@ -191,6 +274,11 @@ export default function Inventory() {
                     ${(item.marketPrice ?? 0).toFixed(2)}
                   </Text>
                 </View>
+                <Pressable style={styles.addToTransactionButton}>
+                  <Text style={styles.addToTransactionButtonText}>
+                    <Ionicons name="add" size={20} color="#FFF" />
+                  </Text>
+                </Pressable>
               </View>
             ))}
           </View>
@@ -246,11 +334,15 @@ const styles = StyleSheet.create({
 
   statBox: {
     flex: 1,
-    backgroundColor: "rgba(133, 79, 213, 0.28)",
+    //backgroundColor: "rgba(133, 79, 213, 0.28)",
+    // experimental_backgroundImage:
+    //   "radial-gradient(50% 50% at 50% 50%, rgba(61, 59, 59, 0.15) 0%, rgba(102, 102, 102, 0.02) 100%)",
+    borderColor: "rgba(133, 79, 213, 0.20)",
+    backgroundColor: "rgba(38, 38, 38, 0.20)",
     borderRadius: 18,
     padding: 13, // change height
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderWidth: 2,
+    // borderColor: "rgba(255, 255, 255, 0.1)",
   },
 
   statLogo: {
@@ -268,6 +360,86 @@ const styles = StyleSheet.create({
     color: "rgba(158, 158, 158, 0.87)",
     textAlign: "center",
     fontWeight: "400",
+  },
+
+  // this is for drop down
+  controlRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 10,
+    marginBottom: 18,
+    zIndex: 10,
+  },
+
+  dropdownWrapper: {
+    flex: 1,
+    position: "relative",
+    zIndex: 20,
+  },
+
+  dropdownButton: {
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: "rgba(38, 38, 38, 0.20)",
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "rgba(133, 79, 213, 0.20)", //rgba(255, 255, 255, 0.12)
+  },
+
+  dropdownText: {
+    color: "rgba(158, 158, 158, 0.87)",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  dropdownMenu: {
+    position: "absolute",
+    top: 52,
+    left: 0,
+    right: 0,
+    backgroundColor: "rgba(38, 38, 38, 0.90)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(133, 79, 213, 0.20)",
+    overflow: "hidden",
+    zIndex: 99,
+  },
+
+  dropdownItem: {
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+
+  dropdownItemText: {
+    color: "rgba(158, 158, 158, 0.87)",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+
+  // this is for grid/llist
+  viewToggle: {
+    flexDirection: "row",
+    backgroundColor: "rgba(20, 20, 24, 0.7)",
+    borderRadius: 16,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    marginBottom: 10,
+  },
+
+  iconButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  activeIconButton: {
+    backgroundColor: "#854FD5",
   },
 
   sortRow: {
@@ -313,7 +485,7 @@ const styles = StyleSheet.create({
   },
 
   activeToggle: {
-    color: "#854FD5",
+    backgroundColor: "#854FD5",
   },
 
   grid: {
@@ -366,14 +538,14 @@ const styles = StyleSheet.create({
     fontSize: 13, //15
     fontWeight: "800",
     textAlign: "center",
-    marginTop: 8,
+    marginTop: 10,
   },
 
   cardDetail: {
     color: "rgba(255, 255, 255, 0.7)",
     fontSize: 12,
     textAlign: "center",
-    marginTop: 3,
+    marginTop: 10,
   },
 
   cardPrice: {
@@ -381,6 +553,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
     textAlign: "center",
-    marginTop: 5,
+    marginTop: 10,
+  },
+
+  addToTransactionButton: {
+    backgroundColor: "#854FD5",
+    height: 40,
+    width: 40,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    alignSelf: "center",
+  },
+
+  addToTransactionButtonText: {
+    // alignContent: "center",
   },
 });

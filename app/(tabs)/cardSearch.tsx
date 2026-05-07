@@ -5,14 +5,18 @@ import {
   type PokemonCard,
 } from "@/services/pokemonApi";
 
-import { addCardToInventory } from "@/services/inventoryService";
+import {
+  addCardToInventory,
+  getInventory,
+  type InventoryItem,
+} from "@/services/inventoryService";
 
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 
 // React hook for storing live data
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 
 import {
   ActivityIndicator,
@@ -27,6 +31,9 @@ import {
 } from "react-native";
 
 export default function CardSearch() {
+  // stores current inventory
+  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+
   // This is for what users type in search box
   const [searchText, setSearchText] = useState("");
 
@@ -39,11 +46,38 @@ export default function CardSearch() {
   // Error Message status
   const [errorMessage, setErrorMessage] = useState("");
 
+  // reload inventory every time screen is focused
+  useFocusEffect(
+    useCallback(() => {
+      async function loadInventory() {
+        const savedInventory = await getInventory();
+
+        setInventory(savedInventory);
+      }
+
+      loadInventory();
+    }, []),
+  );
+
+  // get quantity of specific card in inventory
+  function getCardQuantity(cardId: string) {
+    // check if current cardId matches with cardid from inventory
+    const inventoryCard = inventory.find((item) => item.cardId === cardId);
+
+    return inventoryCard?.quantity ?? 0;
+  }
+
   // this is to check if addInventory works and debug
   const handleAddToInventory = async (card: PokemonCard) => {
     try {
-      await addCardToInventory(card);
-      console.log(`${card.name} added to inventory`);
+      // save updated inventory
+      const updatedInventory = await addCardToInventory(card);
+
+      // immediately update UI
+      setInventory(updatedInventory);
+
+      // await addCardToInventory(card);
+      // console.log(`${card.name} added to inventory`);
     } catch (error) {
       console.log("Failed to add card: ", error);
     }
@@ -186,12 +220,18 @@ export default function CardSearch() {
                     card.tcgplayer?.prices?.["1stEditionHolofoil"]?.market ??
                     card.tcgplayer?.prices?.["1stEditionNormal"]?.market ??
                     "missing"}
-                  <Text> QNTY: 0 </Text>
+                  <Text> QNTY: {getCardQuantity(card.id)}</Text>
                 </Text>
 
                 {/** BUTTON TO ADD TO COLLECTION */}
                 <Pressable
-                  style={styles.addToCollectionButton}
+                  style={[
+                    styles.addToCollectionButton,
+
+                    // if quantity > 0 -> GLOW PURPLE
+                    getCardQuantity(card.id) > 0 &&
+                      styles.activeCollectionButton,
+                  ]}
                   onPress={() => handleAddToInventory(card)}
                 >
                   <Text style={styles.addToCollectionButtonText}>
@@ -291,6 +331,20 @@ const styles = StyleSheet.create({
     // borderWidth: 2,
   },
 
+  activeCollectionButton: {
+    backgroundColor: "#854FD5",
+
+    shadowColor: "#854FD5",
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.9,
+    shadowRadius: 8,
+
+    elevation: 10,
+  },
+
   searchButtonText: {
     color: "#FFF",
     fontSize: 20,
@@ -352,6 +406,7 @@ const styles = StyleSheet.create({
   cardPriceStats: {
     color: "rgba(255, 255, 255, 0.7)",
     fontSize: 10,
+    fontWeight: "500",
     marginBottom: 2,
     marginTop: 10,
     textAlign: "center",

@@ -151,11 +151,21 @@ export default function CardExpansion() {
               </Text>
             </Text>
 
-            <Text style={styles.cardQuantityText}>In Stock: 0</Text>
+            {/* <Text style={styles.cardQuantityText}>In Stock: 0</Text> */}
           </View>
 
-          <View style={styles.cardQuantity}>
-            <Text style={styles.cardQuantityText}>In Stock: 0</Text>
+          <View style={styles.cardQuantityRow}>
+            <Text style={styles.cardQuantityText}>QNTY: </Text>
+
+            <Pressable style={styles.qtyButton}>
+              <Ionicons name="remove-circle-outline" size={18} color={"#FFF"} />
+            </Pressable>
+
+            <Text style={styles.cardQuantityNumber}>0</Text>
+
+            <Pressable style={styles.qtyButton}>
+              <Ionicons name="add-circle-outline" size={18} color={"#FFF"} />
+            </Pressable>
           </View>
 
           {/** CARD STATS */}
@@ -272,6 +282,13 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
+  cardQuantityRow: {
+    flexDirection: "row",
+    justifyContent: "space-evenly",
+    alignItems: "baseline",
+    marginBottom: 2.5,
+  },
+
   cardQuantity: {
     flexDirection: "row",
     justifyContent: "flex-start",
@@ -281,8 +298,18 @@ const styles = StyleSheet.create({
 
   cardQuantityText: {
     color: "#00CF30",
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "400",
+  },
+
+  cardQuantityNumber: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "400",
+  },
+
+  qtyButton: {
+    //
   },
 
   statBox: {
