@@ -1,4 +1,3 @@
-import { getInventory, type InventoryItem } from "@/services/inventoryService";
 import { AntDesign, Feather, FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
@@ -12,11 +11,9 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useInventoryStore } from "../store/inventoryStore";
 
 export default function Inventory() {
-  // stores all cards saved in local inventory
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-
   // create search
   const [searchText, setSearchText] = useState("");
 
@@ -28,6 +25,10 @@ export default function Inventory() {
 
   // this would be for sorting options for dropdown
   const [sortOpen, setSortOpen] = useState(false);
+
+  // updated inventory store with Zustand
+  const inventory = useInventoryStore((state) => state.inventory);
+  const loadInventory = useInventoryStore((state) => state.loadInventory);
 
   // makes sorting easier for dropdown with this
   const sortOptions: {
@@ -45,14 +46,9 @@ export default function Inventory() {
     );
   };
 
-  // this would run everytime the user opens this tab/screen
+  // updated load Inventory focusEffect
   useFocusEffect(
     useCallback(() => {
-      async function loadInventory() {
-        const savedInventory = await getInventory();
-        setInventory(savedInventory);
-      }
-
       loadInventory();
     }, []),
   );

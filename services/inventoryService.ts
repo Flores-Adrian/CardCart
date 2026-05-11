@@ -48,6 +48,49 @@ export async function saveInventory(items: InventoryItem[]) {
   await AsyncStorage.setItem(INVENTORY_KEY, JSON.stringify(items));
 }
 
+// ADD QUANTITY TO [id].tsx
+export async function increaseCardQuantity(cardId: string) {
+  // get saved inventory
+  const inventory = await getInventory();
+
+  // get current amount of current inventory
+  // const exisitingCard = inventory.find((item) => item.cardId === cardId);
+
+  // if it does exist we update
+  const updateInventory = inventory.map((item) =>
+    item.cardId === cardId ? { ...item, quantity: item.quantity + 1 } : item,
+  );
+
+  await saveInventory(updateInventory);
+  return updateInventory;
+}
+
+// REMOVE QUANTIY TO [id].tsx
+export async function decreaseCardQuantity(cardId: string) {
+  // get saved inventory
+  const inventory = await getInventory();
+
+  // update inventory, reduce qnty by 1
+  const updateInventory = inventory
+    .map((item) =>
+      item.cardId === cardId
+        ? {
+            ...item,
+
+            // this would help prevent the quantity from being 0
+            quantity: Math.max(item.quantity - 1, 0),
+          }
+        : item,
+    )
+    .filter((item) => item.quantity > 0);
+
+  // save inventory
+  await saveInventory(updateInventory);
+
+  //return updated inventory
+  return updateInventory;
+}
+
 // Add card to inventory
 export async function addCardToInventory(card: PokemonCard) {
   // get saved inventory

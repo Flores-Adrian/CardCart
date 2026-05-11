@@ -3,7 +3,17 @@ import {
   getPokemonCardById,
   type PokemonCard,
 } from "@/services/pokemonApi";
+
+// import {
+//   decreaseCardQuantity,
+//   getInventory,
+//   increaseCardQuantity,
+// } from "@/services/inventoryService";
+
+import { useInventoryStore } from "../store/inventoryStore";
+
 import { Ionicons } from "@expo/vector-icons";
+
 import {
   ActivityIndicator,
   Animated,
@@ -24,17 +34,30 @@ export default function CardExpansion() {
   // from (/card/[id])
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  // stroe the data fetched from card
+  // this gets quantity state, STORES THE AMOUNT FOR A SPECIFIC CARD
+  // const [quantity, setQuantity] = useState(0);
+
+  // stroe the specific card details fetched form API
   const [card, setCard] = useState<PokemonCard | null>(null);
 
   // loading state for spinner
   const [loading, setLoading] = useState(true);
 
+  // ANIMATION VALUES
   // Animation value for sizing
   const scaleAnimation = useRef(new Animated.Value(0.9)).current;
-
   // Animation value for fade
   const fadeAnimation = useRef(new Animated.Value(0)).current;
+
+  // updated Inventory Storage with Zustand actions/state
+  const addCard = useInventoryStore((state) => state.addCard);
+  const increaseCard = useInventoryStore((state) => state.increaseCard);
+  const decreaseCard = useInventoryStore((state) => state.decreaseCard);
+  const getQuantity = useInventoryStore((state) => state.getQuantity);
+  const loadInventory = useInventoryStore((state) => state.loadInventory);
+
+  // this would get live quantity from Zustand
+  const quantity = card ? getQuantity(card.id) : 0;
 
   // this would run when the component loads OR [id] changes
   useEffect(() => {
@@ -42,30 +65,30 @@ export default function CardExpansion() {
       if (!id) return;
 
       try {
+        setLoading(true);
+
         // Call API to fetch full card deatils with unique ID
         const result = await getPokemonCardById(id);
 
-        // save card into state
+        // save card locally for this screen
         setCard(result);
+
+        // load inventory into Zustand so quantity is synced
+        await loadInventory();
 
         // START animation once data LOADS
         Animated.parallel([
-          Animated.timing(scaleAnimation, {
-            toValue: 1, // grow to full size
-            duration: 1000,
+          Animated.spring(scaleAnimation, {
+            toValue: 1,
+            friction: 7, // 9
+            tension: 80, // 350
             useNativeDriver: true,
           }),
           Animated.timing(fadeAnimation, {
             toValue: 1, // fade in
-            duration: 1000,
+            duration: 1000, //250
             useNativeDriver: true,
           }),
-          // Animated.spring(scaleAnimation, {
-          //   toValue: 1,
-          //   friction: 9,
-          //   tension: 350,
-          //   useNativeDriver: true,
-          // }),
         ]).start();
       } catch (error) {
         console.log("Card detail screen error", error);
@@ -79,6 +102,32 @@ export default function CardExpansion() {
     // show card
     loadCard();
   }, [id]);
+
+  // this would add +1 quantity with zustand
+  const handleIncreaseQuantity = async () => {
+    // does not exist
+    if (!card) {
+      return;
+    }
+
+    // if qnty is 0
+    if (quantity === 0) {
+      await addCard(card);
+    } else {
+      await increaseCard(card.id);
+    }
+  };
+
+  // this would remove -1 from live quantity
+  const handleDecreaseQuantity = async () => {
+    // if card doesn't exist and is less than 0
+    if (!card || quantity <= 0) {
+      return;
+    }
+
+    // update inventory
+    await decreaseCard(card.id);
+  };
 
   // CREATE SPINNER (while loading -> show spinner)
   if (loading) {
@@ -157,14 +206,22 @@ export default function CardExpansion() {
           <View style={styles.cardQuantityRow}>
             <Text style={styles.cardQuantityText}>QNTY: </Text>
 
-            <Pressable style={styles.qtyButton}>
-              <Ionicons name="remove-circle-outline" size={18} color={"#FFF"} />
+            <Pressable
+              style={styles.qtyButton}
+              onPress={handleDecreaseQuantity}
+            >
+              {/* <Ionicons name="remove-circle-outline" size={18} color={"#FFF"} /> */}
+              <Ionicons name="remove" size={18} color={"#FFF"} />
             </Pressable>
 
-            <Text style={styles.cardQuantityNumber}>0</Text>
+            <Text style={styles.cardQuantityNumber}>{quantity}</Text>
 
-            <Pressable style={styles.qtyButton}>
-              <Ionicons name="add-circle-outline" size={18} color={"#FFF"} />
+            <Pressable
+              style={styles.qtyButton}
+              onPress={handleIncreaseQuantity}
+            >
+              {/* <Ionicons name="add-circle-outline" size={18} color={"#FFF"} /> */}
+              <Ionicons name="add" size={18} color={"#FFF"} />
             </Pressable>
           </View>
 
@@ -283,10 +340,15 @@ const styles = StyleSheet.create({
   },
 
   cardQuantityRow: {
+    // flexDirection: "row",
+    // justifyContent: "space-evenly",
+    // alignItems: "baseline",
+    // marginBottom: 2.5,
     flexDirection: "row",
-    justifyContent: "space-evenly",
-    alignItems: "baseline",
-    marginBottom: 2.5,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginTop: 2.5,
+    gap: 14,
   },
 
   cardQuantity: {
@@ -309,7 +371,14 @@ const styles = StyleSheet.create({
   },
 
   qtyButton: {
-    //
+    width: 22,
+    height: 22,
+    borderRadius: 14,
+    // backgroundColor: "#854FD5",
+    borderWidth: 1,
+    borderColor: "#FFF",
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   statBox: {

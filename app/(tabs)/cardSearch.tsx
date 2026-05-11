@@ -5,11 +5,8 @@ import {
   type PokemonCard,
 } from "@/services/pokemonApi";
 
-import {
-  addCardToInventory,
-  getInventory,
-  type InventoryItem,
-} from "@/services/inventoryService";
+// updated inventory using ZUSTAND
+import { useInventoryStore } from "../store/inventoryStore";
 
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 
@@ -32,7 +29,7 @@ import {
 
 export default function CardSearch() {
   // stores current inventory
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
+  //const [inventory, setInventory] = useState<InventoryItem[]>([]);
 
   // This is for what users type in search box
   const [searchText, setSearchText] = useState("");
@@ -46,42 +43,59 @@ export default function CardSearch() {
   // Error Message status
   const [errorMessage, setErrorMessage] = useState("");
 
+  // update using inventory STORAGE USING Zustand
+  const inventory = useInventoryStore((state) => state.inventory);
+  const loadInventory = useInventoryStore((state) => state.loadInventory);
+  const addCard = useInventoryStore((state) => state.addCard);
+  const getQuantity = useInventoryStore((state) => state.getQuantity);
+
   // reload inventory every time screen is focused
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     async function loadInventory() {
+  //       const savedInventory = await getInventory();
+
+  //       setInventory(savedInventory);
+  //     }
+
+  //     loadInventory();
+  //   }, []),
+  // );
+
+  // updated focusEffect using zustand storage --------------
   useFocusEffect(
     useCallback(() => {
-      async function loadInventory() {
-        const savedInventory = await getInventory();
-
-        setInventory(savedInventory);
-      }
-
       loadInventory();
     }, []),
   );
 
-  // get quantity of specific card in inventory
-  function getCardQuantity(cardId: string) {
-    // check if current cardId matches with cardid from inventory
-    const inventoryCard = inventory.find((item) => item.cardId === cardId);
+  const handleAddToInventory = async (card: PokemonCard) => {
+    await addCard(card);
+  };
 
-    return inventoryCard?.quantity ?? 0;
-  }
+  // get quantity of specific card in inventory
+  // function getCardQuantity(cardId: string) {
+  //   // check if current cardId matches with cardid from inventory
+  //   const inventoryCard = inventory.find((item) => item.cardId === cardId);
+
+  //   return inventoryCard?.quantity ?? 0;
+  // }
 
   // this is to check if addInventory works and debug
-  const handleAddToInventory = async (card: PokemonCard) => {
-    try {
-      // save updated inventory
-      const updatedInventory = await addCardToInventory(card);
+  // const handleAddToInventory = async (card: PokemonCard) => {
+  //   try {
+  //     // save updated inventory
+  //     const updatedInventory = await addCardToInventory(card);
 
-      // immediately update UI
-      setInventory(updatedInventory);
+  //     // immediately update UI
+  //     setInventory(updatedInventory);
 
-      // await addCardToInventory(card);
-      // console.log(`${card.name} added to inventory`);
-    } catch (error) {
-      console.log("Failed to add card: ", error);
-    }
-  };
+  //     // await addCardToInventory(card);
+  //     // console.log(`${card.name} added to inventory`);
+  //   } catch (error) {
+  //     console.log("Failed to add card: ", error);
+  //   }
+  // };
 
   // create function for when the user clicks the search button
   const handleSearch = async () => {
@@ -220,7 +234,7 @@ export default function CardSearch() {
                     card.tcgplayer?.prices?.["1stEditionHolofoil"]?.market ??
                     card.tcgplayer?.prices?.["1stEditionNormal"]?.market ??
                     "missing"}
-                  <Text> QNTY: {getCardQuantity(card.id)}</Text>
+                  <Text> QNTY: {getQuantity(card.id)}</Text>
                 </Text>
 
                 {/** BUTTON TO ADD TO COLLECTION */}
@@ -229,8 +243,7 @@ export default function CardSearch() {
                     styles.addToCollectionButton,
 
                     // if quantity > 0 -> GLOW PURPLE
-                    getCardQuantity(card.id) > 0 &&
-                      styles.activeCollectionButton,
+                    getQuantity(card.id) > 0 && styles.activeCollectionButton,
                   ]}
                   onPress={() => handleAddToInventory(card)}
                 >
