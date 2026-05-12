@@ -53,11 +53,13 @@ export default function CardExpansion() {
   const addCard = useInventoryStore((state) => state.addCard);
   const increaseCard = useInventoryStore((state) => state.increaseCard);
   const decreaseCard = useInventoryStore((state) => state.decreaseCard);
-  const getQuantity = useInventoryStore((state) => state.getQuantity);
   const loadInventory = useInventoryStore((state) => state.loadInventory);
+  const inventory = useInventoryStore((state) => state.inventory);
 
   // this would get live quantity from Zustand
-  const quantity = card ? getQuantity(card.id) : 0;
+  const quantity = card
+    ? (inventory.find((item) => item.cardId === card.id)?.quantity ?? 0)
+    : 0;
 
   // this would run when the component loads OR [id] changes
   useEffect(() => {
@@ -207,8 +209,13 @@ export default function CardExpansion() {
             <Text style={styles.cardQuantityText}>QNTY: </Text>
 
             <Pressable
-              style={styles.qtyButton}
+              style={({ pressed }) => [
+                styles.qtyButton,
+                pressed && styles.qtyButtonPressed,
+                quantity <= 0 && styles.qtyButtonDisabled,
+              ]}
               onPress={handleDecreaseQuantity}
+              disabled={quantity <= 0}
             >
               {/* <Ionicons name="remove-circle-outline" size={18} color={"#FFF"} /> */}
               <Ionicons name="remove" size={18} color={"#FFF"} />
@@ -217,7 +224,10 @@ export default function CardExpansion() {
             <Text style={styles.cardQuantityNumber}>{quantity}</Text>
 
             <Pressable
-              style={styles.qtyButton}
+              style={({ pressed }) => [
+                styles.qtyButton,
+                pressed && styles.qtyButtonPressed,
+              ]}
               onPress={handleIncreaseQuantity}
             >
               {/* <Ionicons name="add-circle-outline" size={18} color={"#FFF"} /> */}
@@ -379,6 +389,15 @@ const styles = StyleSheet.create({
     borderColor: "#FFF",
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  qtyButtonPressed: {
+    transform: [{ scale: 0.92 }],
+    backgroundColor: "#A16BFF",
+  },
+
+  qtyButtonDisabled: {
+    backgroundColor: "rgba(133, 79, 213, 0.35)",
   },
 
   statBox: {

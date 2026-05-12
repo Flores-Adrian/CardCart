@@ -26,6 +26,9 @@ export default function Inventory() {
   // this would be for sorting options for dropdown
   const [sortOpen, setSortOpen] = useState(false);
 
+  // this would be in charge of tracking % changes in inventory
+  const [previousTotalValue, setPreviousTotalValue] = useState(0);
+
   // updated inventory store with Zustand
   const inventory = useInventoryStore((state) => state.inventory);
   const loadInventory = useInventoryStore((state) => state.loadInventory);
@@ -84,6 +87,14 @@ export default function Inventory() {
     (sum, item) => sum + (item.marketPrice ?? 0) * item.quantity,
     0,
   );
+
+  // CALCULATE CHANGE %
+  const valueChange = totalValue - previousTotalValue;
+
+  const percentageChange =
+    previousTotalValue > 0 ? (valueChange / previousTotalValue) * 100 : 0;
+
+  const isPositive = valueChange >= 0;
 
   return (
     <View style={styles.container}>
