@@ -8,12 +8,14 @@ import { create } from "zustand";
 
 import type { PokemonCard } from "@/services/pokemonApi";
 
+import { createInventorySnapshot } from "@/services/inventorySnapshotService";
+
 import {
-    addCardToInventory,
-    decreaseCardQuantity,
-    getInventory,
-    increaseCardQuantity,
-    type InventoryItem,
+  addCardToInventory,
+  decreaseCardQuantity,
+  getInventory,
+  increaseCardQuantity,
+  type InventoryItem,
 } from "@/services/inventoryService";
 
 // create values for Zustand and what we will be retreiving
@@ -38,16 +40,22 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
 
   addCard: async (card) => {
     const updatedInventory = await addCardToInventory(card);
+    // call snapshot to save for tracking purposes
+    await createInventorySnapshot(updatedInventory);
     set({ inventory: updatedInventory });
   },
 
   increaseCard: async (cardId) => {
     const updatedInventory = await increaseCardQuantity(cardId);
+    // call snapshot to save for tracking purposes
+    await createInventorySnapshot(updatedInventory);
     set({ inventory: updatedInventory });
   },
 
   decreaseCard: async (cardId) => {
     const updatedInventory = await decreaseCardQuantity(cardId);
+    // call snapshot to save for tracking purposes
+    await createInventorySnapshot(updatedInventory);
     set({ inventory: updatedInventory });
   },
 

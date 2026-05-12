@@ -6,7 +6,7 @@ import {
 } from "@/services/pokemonApi";
 
 // updated inventory using ZUSTAND
-import { useInventoryStore } from "../store/inventoryStore";
+import { useInventoryStore } from "@/store/inventoryStore";
 
 import { FontAwesome6, Ionicons } from "@expo/vector-icons";
 
@@ -72,30 +72,6 @@ export default function CardSearch() {
   const handleAddToInventory = async (card: PokemonCard) => {
     await addCard(card);
   };
-
-  // get quantity of specific card in inventory
-  // function getCardQuantity(cardId: string) {
-  //   // check if current cardId matches with cardid from inventory
-  //   const inventoryCard = inventory.find((item) => item.cardId === cardId);
-
-  //   return inventoryCard?.quantity ?? 0;
-  // }
-
-  // this is to check if addInventory works and debug
-  // const handleAddToInventory = async (card: PokemonCard) => {
-  //   try {
-  //     // save updated inventory
-  //     const updatedInventory = await addCardToInventory(card);
-
-  //     // immediately update UI
-  //     setInventory(updatedInventory);
-
-  //     // await addCardToInventory(card);
-  //     // console.log(`${card.name} added to inventory`);
-  //   } catch (error) {
-  //     console.log("Failed to add card: ", error);
-  //   }
-  // };
 
   // create function for when the user clicks the search button
   const handleSearch = async () => {

@@ -10,7 +10,7 @@ import {
 //   increaseCardQuantity,
 // } from "@/services/inventoryService";
 
-import { useInventoryStore } from "../store/inventoryStore";
+import { useInventoryStore } from "../../store/inventoryStore";
 
 import { Ionicons } from "@expo/vector-icons";
 

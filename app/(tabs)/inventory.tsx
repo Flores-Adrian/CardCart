@@ -11,7 +11,13 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useInventoryStore } from "../store/inventoryStore";
+
+import { useInventoryStore } from "@/store/inventoryStore";
+
+import {
+  getInventorySnapshots,
+  type InventorySnapshot,
+} from "@/services/inventorySnapshotService";
 
 export default function Inventory() {
   // create search
@@ -26,12 +32,47 @@ export default function Inventory() {
   // this would be for sorting options for dropdown
   const [sortOpen, setSortOpen] = useState(false);
 
-  // this would be in charge of tracking % changes in inventory
-  const [previousTotalValue, setPreviousTotalValue] = useState(0);
+  // stores all historical inventory snapshots (1day, 1week, 1month, 3months, etc.)
+  const [snapshots, setSnapShots] = useState<InventorySnapshot[]>([]);
+
+  // check if open/click box
+  const [changeModalOpen, setChangeModalOpen] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<
+    "1D" | "1W" | "1M" | "6M" | "MAX"
+  >("MAX");
 
   // updated inventory store with Zustand
   const inventory = useInventoryStore((state) => state.inventory);
   const loadInventory = useInventoryStore((state) => state.loadInventory);
+
+  // this help change the % when quantity or price changes for FocusEffect
+  // const inventorySignature = inventory
+  //   .map((item) => `${item.cardId}-${item.quantity}-${item.marketPrice}`)
+  //   .join("|");
+
+  // HELPER FUNCTION FOR GRAPH AND TIME DATE
+  function getRangeStartDate(range: "1D" | "1W" | "1M" | "6M" | "MAX") {
+    const now = new Date();
+
+    if (range === "1D") {
+      now.setDate(now.getDate() - 1);
+    }
+
+    if (range === "1W") {
+      now.setDate(now.getDate() - 7);
+    }
+
+    if (range === "1M") {
+      now.setMonth(now.getDate() - 1);
+    }
+
+    if (range === "6M") {
+      now.setMonth(now.getDate() - 6);
+    }
+
+    // return date
+    return now;
+  }
 
   // makes sorting easier for dropdown with this
   const sortOptions: {
@@ -49,11 +90,19 @@ export default function Inventory() {
     );
   };
 
-  // updated load Inventory focusEffect
   useFocusEffect(
     useCallback(() => {
-      loadInventory();
-    }, []),
+      async function loadData() {
+        await loadInventory();
+
+        // load saved inventory snapshots
+        const savedSnapshots = await getInventorySnapshots();
+
+        setSnapShots(savedSnapshots);
+      }
+
+      loadData();
+    }, [loadInventory]),
   );
 
   // this would filter inventory based on search input
@@ -88,13 +137,42 @@ export default function Inventory() {
     0,
   );
 
-  // CALCULATE CHANGE %
-  const valueChange = totalValue - previousTotalValue;
+  // sort snapshots
+  const sortedSnapshots = [...snapshots].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
 
+  // this would be oldest saved snapshot (baseline = oldest)
+  // const baselineSnapshot = snapshots.find(
+  //   (snapshot) => snapshot.totalValue > 0,
+  // );
+  const baselineSnapshot =
+    selectedRange === "MAX"
+      ? sortedSnapshots.find((snapshot) => snapshot.totalValue > 0)
+      : sortedSnapshots.find(
+          (snapshot) =>
+            new Date(snapshot.createdAt).getTime() >=
+              getRangeStartDate(selectedRange).getTime() &&
+            snapshot.totalValue > 0,
+        );
+
+  // original portfolio value
+  const baselineValue = baselineSnapshot?.totalValue ?? 0;
+
+  // dollar change
+  const valueChange = totalValue - baselineValue;
+
+  // CALCULATE percentage change
   const percentageChange =
-    previousTotalValue > 0 ? (valueChange / previousTotalValue) * 100 : 0;
+    baselineValue > 0 ? (valueChange / baselineValue) * 100 : 0;
 
-  const isPositive = valueChange >= 0;
+  // DETERMINES if change is green or red
+  const isPositiveChange = valueChange >= 0;
+
+  // console.log("Snapshots: ", snapshots);
+  // console.log("Baseline:", baselineValue);
+  // console.log("Total:", totalValue);
+  // console.log("Change:", percentageChange);
 
   return (
     <View style={styles.container}>
@@ -123,7 +201,14 @@ export default function Inventory() {
             <Text style={styles.statLogo}>
               <FontAwesome5 name="box-open" size={24} color="#854FD5" />
             </Text>
-            <Text style={styles.statValue}> {totalCards} </Text>
+            <Text
+              style={styles.statValue}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.65}
+            >
+              {totalCards}
+            </Text>
             <Text style={styles.statLabel}> Cards </Text>
           </View>
 
@@ -132,17 +217,64 @@ export default function Inventory() {
             <Text style={styles.statLogo}>
               <AntDesign name="dollar-circle" size={24} color="#854FD5" />{" "}
             </Text>
-            <Text style={styles.statValue}> ${totalValue.toFixed(2)}</Text>
+            <Text
+              style={styles.statValue}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.55}
+            >
+              ${totalValue.toFixed(2)}
+            </Text>
             <Text style={styles.statLabel}> Total Value </Text>
           </View>
 
-          <View style={styles.statBox}>
+          {/* <View style={styles.statBox}>
             <Text style={styles.statValue}>
               <FontAwesome5 name="chart-line" size={24} color="#854FD5" />
             </Text>
             <Text style={styles.statValue}> 12.4% </Text>
             <Text style={styles.statLabel}> Change </Text>
-          </View>
+          </View> */}
+
+          <Pressable
+            style={styles.statBox}
+            onPress={() => setChangeModalOpen(true)}
+          >
+            <Text style={styles.statValue}>
+              <FontAwesome5 name="chart-line" size={24} color="#854FD5" />
+            </Text>
+
+            <Text
+              style={[
+                styles.statValue,
+                {
+                  color: isPositiveChange ? "#4ADE80" : "#FF6B6B",
+                },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.55}
+            >
+              {isPositiveChange ? "+" : ""}
+              {percentageChange.toFixed(1)}%
+            </Text>
+
+            <Text style={styles.statLabel}> Change </Text>
+
+            <Text
+              style={[
+                styles.changeDollarText,
+                {
+                  color: isPositiveChange ? "#4ADE80" : "#FF6B6B",
+                },
+              ]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              {isPositiveChange ? "+" : "-"}${Math.abs(valueChange).toFixed(2)}
+            </Text>
+          </Pressable>
         </View>
 
         {/** SORT BUTTONS WITH GRID/LIST VIEW */}
@@ -205,57 +337,6 @@ export default function Inventory() {
           </View>
         </View>
 
-        {/** SORT BUTTONS */}
-        {/* 
-        <View style={styles.sortRow}>
-          <Pressable
-            style={[styles.sortButton, sortBy === "name" && styles.activeSort]}
-            onPress={() => setSortBy("name")}
-          >
-            <Text style={styles.sortText}> Name A-Z </Text>
-          </Pressable>
-
-          <Pressable
-            style={[styles.sortButton, sortBy === "price" && styles.activeSort]}
-            onPress={() => setSortBy("price")}
-          >
-            <Text style={styles.sortText}> Price</Text>
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.sortButton,
-              sortBy === "quantity" && styles.activeSort,
-            ]}
-            onPress={() => setSortBy("quantity")}
-          >
-            <Text style={styles.sortText}> QTY </Text>
-          </Pressable>
-        </View> */}
-
-        {/** Grid/List toggle */}
-        {/* <View style={styles.toggleRow}>
-          <Pressable
-            style={[
-              styles.toggleButton,
-              viewMode === "grid" && styles.activeToggle,
-            ]}
-            onPress={() => setViewMode("grid")}
-          >
-            <Feather name="grid" size={24} color="white" />
-          </Pressable>
-
-          <Pressable
-            style={[
-              styles.toggleButton,
-              viewMode === "list" && styles.activeToggle,
-            ]}
-            onPress={() => setViewMode("list")}
-          >
-            <AntDesign name="unordered-list" size={24} color="#FFF" />
-          </Pressable>
-        </View> */}
-
         {/** DISPLAY CARD INFORMATION */}
         <ScrollView showsVerticalScrollIndicator={false}>
           {/** change view types for grid/list */}
@@ -290,6 +371,57 @@ export default function Inventory() {
             ))}
           </View>
         </ScrollView>
+
+        {/** THIS IS THE GRAPH SECTION OF THE PAGE */}
+        {changeModalOpen && (
+          <View style={styles.bottomSheetOverlay}>
+            <Pressable
+              style={styles.bottomSheetBackdrop}
+              onPress={() => setChangeModalOpen(false)}
+            />
+
+            {/** POP UP SECTION TITLE AND BUTTONS */}
+            <View style={styles.bottomSheet}>
+              <Text style={styles.bottomSheetTitle}> Portfolio Change </Text>
+
+              <View style={styles.rangeRow}>
+                {(["1D", "1W", "1M", "6M", "MAX"] as const).map((range) => (
+                  <Pressable
+                    key={range}
+                    style={[
+                      styles.rangeButton,
+                      selectedRange === range && styles.activeRangeButton,
+                    ]}
+                    onPress={() => setSelectedRange(range)}
+                  >
+                    <Text style={styles.rangeButtonText}>{range}</Text>
+                  </Pressable>
+                ))}
+              </View>
+
+              <Text
+                style={[
+                  styles.sheetChangeText,
+                  { color: isPositiveChange ? "#4ADE80" : "#FF6B6B" },
+                ]}
+              >
+                {isPositiveChange ? "+" : "-"} $
+                {Math.abs(valueChange).toFixed(2)}{" "}
+                {selectedRange === "MAX" ? "all time" : `in ${selectedRange}`}
+              </Text>
+
+              <Text
+                style={[
+                  styles.sheetPercentText,
+                  { color: isPositiveChange ? "#4ADE80" : "#FF6B6B" },
+                ]}
+              >
+                {isPositiveChange ? "+" : ""}
+                {percentageChange.toFixed(1)}%
+              </Text>
+            </View>
+          </View>
+        )}
       </ImageBackground>
     </View>
   );
@@ -341,15 +473,15 @@ const styles = StyleSheet.create({
 
   statBox: {
     flex: 1,
-    //backgroundColor: "rgba(133, 79, 213, 0.28)",
-    // experimental_backgroundImage:
-    //   "radial-gradient(50% 50% at 50% 50%, rgba(61, 59, 59, 0.15) 0%, rgba(102, 102, 102, 0.02) 100%)",
-    borderColor: "rgba(133, 79, 213, 0.20)",
-    backgroundColor: "rgba(38, 38, 38, 0.20)",
+    borderColor: "rgba(133, 79, 213, 0.20)", // rgba(255, 255, 255, 0.1)
+    backgroundColor: "rgba(38, 38, 38, 0.20)", // rgba(133, 79, 213, 0.28)
     borderRadius: 18,
     padding: 13, // change height
     borderWidth: 2,
-    // borderColor: "rgba(255, 255, 255, 0.1)",
+
+    minHeight: 105,
+    justifyContent: "center",
+    alignItems: "center",
   },
 
   statLogo: {
@@ -361,12 +493,87 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 20,
     fontWeight: "800",
+    width: "100%",
   },
 
   statLabel: {
     color: "rgba(158, 158, 158, 0.87)",
     textAlign: "center",
     fontWeight: "400",
+    marginTop: 2,
+  },
+
+  changeDollarText: {
+    fontSize: 12,
+    fontWeight: "700",
+    marginTop: 3,
+    textAlign: "center",
+    width: "100%",
+  },
+
+  // THIS WOULD BE FOR BOTTOM POP UP SECTION FOR GRAPH
+  bottomSheetOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "flex-end",
+    zIndex: 100,
+  },
+
+  bottomSheetBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0, 0, 0, 0.45)",
+  },
+
+  bottomSheet: {
+    backgroundColor: "rgba(20, 20, 24, 0.98)",
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    padding: 22,
+    borderWidth: 1,
+    borderColor: "rgba(133, 79, 213, 0.35)",
+  },
+
+  bottomSheetTitle: {
+    color: "#FFF",
+    fontSize: 20,
+    fontWeight: "800",
+    textAlign: "center",
+    marginBottom: 18,
+  },
+
+  rangeRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 22,
+  },
+
+  rangeButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 13,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+  },
+
+  activeRangeButton: {
+    backgroundColor: "#854FD5",
+  },
+
+  rangeButtonText: {
+    color: "#FFF",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+
+  sheetChangeText: {
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "800",
+  },
+
+  sheetPercentText: {
+    textAlign: "center",
+    fontSize: 34,
+    fontWeight: "900",
+    marginTop: 6,
   },
 
   // this is for drop down
