@@ -13,6 +13,8 @@ import {
 } from "react-native";
 
 import { useInventoryStore } from "@/store/inventoryStore";
+//import { LineChart } from "react-native-chart-kit";
+import { LineChart } from "react-native-gifted-charts";
 
 import {
   getInventorySnapshots,
@@ -37,9 +39,10 @@ export default function Inventory() {
 
   // check if open/click box
   const [changeModalOpen, setChangeModalOpen] = useState(false);
-  const [selectedRange, setSelectedRange] = useState<
-    "1D" | "1W" | "1M" | "6M" | "MAX"
-  >("MAX");
+
+  type TimeRange = "1D" | "1W" | "1M" | "3M" | "6M" | "MAX";
+
+  const [selectedRange, setSelectedRange] = useState<TimeRange>("MAX");
 
   // updated inventory store with Zustand
   const inventory = useInventoryStore((state) => state.inventory);
@@ -51,7 +54,7 @@ export default function Inventory() {
   //   .join("|");
 
   // HELPER FUNCTION FOR GRAPH AND TIME DATE
-  function getRangeStartDate(range: "1D" | "1W" | "1M" | "6M" | "MAX") {
+  function getRangeStartDate(range: "1D" | "1W" | "1M" | "3M" | "6M" | "MAX") {
     const now = new Date();
 
     if (range === "1D") {
@@ -63,15 +66,60 @@ export default function Inventory() {
     }
 
     if (range === "1M") {
-      now.setMonth(now.getDate() - 1);
+      now.setMonth(now.getMonth() - 1);
+    }
+    if (range === "3M") {
+      now.setMonth(now.getMonth() - 3);
     }
 
     if (range === "6M") {
-      now.setMonth(now.getDate() - 6);
+      now.setMonth(now.getMonth() - 6);
     }
 
     // return date
     return now;
+  }
+
+  // HELPER FUNCTION to get baseline for snapshot and prevent it from being 0
+  // Finds the starting point for the slected reange
+  function getBaselineSnapshot(
+    range: TimeRange,
+    snapshots: InventorySnapshot[],
+  ) {
+    // Remove snapshots where value is 0, IF NOT it will break percntage math
+    // Sort oldest -> newest so we can comapre from the correct starting point
+    const sortedSnapshots = [...snapshots]
+      .filter((snapshot) => snapshot.totalValue > 0)
+      .sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+      );
+
+    // if there is not a usable snapshot yet, return null
+    // this will preven crashes when our inventory is empty
+    if (sortedSnapshots.length === 0) {
+      return null;
+    }
+
+    // Lifetime growth, first snapshot ever recorded for user
+    if (range === "MAX") {
+      return sortedSnapshots[0];
+    }
+
+    // Get starting date for the selected range
+    // Ex: 1M = "date form one month ago"
+    const startDate = getRangeStartDate(range).getTime();
+
+    // Find the frist snapshot inside the SELECTED TIME RANGE
+    // Ex: if range is 1W, find earliest snapshot from the last 7 days
+    const snapshotInRange = sortedSnapshots.find(
+      (snapshot) => new Date(snapshot.createdAt).getTime() >= startDate,
+    );
+
+    // If we found a snapshot in the range, USE IT
+    // IF NOT, fallback to the earliest snapshot available.
+    // Helpful when we don't have old enough data yet
+    return snapshotInRange ?? sortedSnapshots[0];
   }
 
   // makes sorting easier for dropdown with this
@@ -142,19 +190,8 @@ export default function Inventory() {
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
-  // this would be oldest saved snapshot (baseline = oldest)
-  // const baselineSnapshot = snapshots.find(
-  //   (snapshot) => snapshot.totalValue > 0,
-  // );
-  const baselineSnapshot =
-    selectedRange === "MAX"
-      ? sortedSnapshots.find((snapshot) => snapshot.totalValue > 0)
-      : sortedSnapshots.find(
-          (snapshot) =>
-            new Date(snapshot.createdAt).getTime() >=
-              getRangeStartDate(selectedRange).getTime() &&
-            snapshot.totalValue > 0,
-        );
+  // get oldest saved snapshot for SPECIFIC TIME
+  const baselineSnapshot = getBaselineSnapshot(selectedRange, snapshots);
 
   // original portfolio value
   const baselineValue = baselineSnapshot?.totalValue ?? 0;
@@ -169,10 +206,49 @@ export default function Inventory() {
   // DETERMINES if change is green or red
   const isPositiveChange = valueChange >= 0;
 
-  // console.log("Snapshots: ", snapshots);
-  // console.log("Baseline:", baselineValue);
-  // console.log("Total:", totalValue);
-  // console.log("Change:", percentageChange);
+  // console.log("Selected Range;", selectedRange);
+  // console.log("Baseline Snapshot:", baselineSnapshot);
+  // console.log("Baseline Value:", baselineValue);
+  // console.log("Current Total:", totalValue);
+  // console.log("Percentage Change:", percentageChange);
+
+  // FILTER snapshots AND TURN them into CHART DATA for react-native-chart-kit
+  const filteredSnapshotsForGraph = snapshots
+    .filter((snapshot) => {
+      if (selectedRange === "MAX") {
+        return true;
+      }
+
+      // if not, return specific range that was selected (earlieset snapshot for specific time)
+      return (
+        new Date(snapshot.createdAt).getTime() >=
+        getRangeStartDate(selectedRange).getTime()
+      );
+    })
+    // sort from oldest to new
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
+
+  // get snapshots to graph
+  const graphSnapshots =
+    filteredSnapshotsForGraph.length > 0
+      ? filteredSnapshotsForGraph
+      : snapshots;
+
+  // get values to be able to graph
+  const graphValues = graphSnapshots.map((snapshot) =>
+    Number(snapshot.totalValue.toFixed(2)),
+  );
+
+  // CREATE GRAPH DATA for gifted-charts
+  const graphData = graphSnapshots.map((snapshot) => ({
+    value: Number(snapshot.totalValue.toFixed(2)),
+    label: `${new Date(snapshot.createdAt).getMonth() + 1}/${new Date(
+      snapshot.createdAt,
+    ).getDate()}`,
+  }));
 
   return (
     <View style={styles.container}>
@@ -385,18 +461,20 @@ export default function Inventory() {
               <Text style={styles.bottomSheetTitle}> Portfolio Change </Text>
 
               <View style={styles.rangeRow}>
-                {(["1D", "1W", "1M", "6M", "MAX"] as const).map((range) => (
-                  <Pressable
-                    key={range}
-                    style={[
-                      styles.rangeButton,
-                      selectedRange === range && styles.activeRangeButton,
-                    ]}
-                    onPress={() => setSelectedRange(range)}
-                  >
-                    <Text style={styles.rangeButtonText}>{range}</Text>
-                  </Pressable>
-                ))}
+                {(["1D", "1W", "1M", "3M", "6M", "MAX"] as const).map(
+                  (range) => (
+                    <Pressable
+                      key={range}
+                      style={[
+                        styles.rangeButton,
+                        selectedRange === range && styles.activeRangeButton,
+                      ]}
+                      onPress={() => setSelectedRange(range)}
+                    >
+                      <Text style={styles.rangeButtonText}>{range}</Text>
+                    </Pressable>
+                  ),
+                )}
               </View>
 
               <Text
@@ -419,6 +497,72 @@ export default function Inventory() {
                 {isPositiveChange ? "+" : ""}
                 {percentageChange.toFixed(1)}%
               </Text>
+
+              {/** THIS IS THE GRAPH SECTION */}
+              {/* {graphValues.length >= 2 ? (
+                <LineChart
+                  data={{
+                    labels: graphSnapshots.map((snapshot) => {
+                      const date = new Date(snapshot.createdAt);
+                      return `${date.getMonth() + 1}/${date.getDate()}`;
+                    }),
+                    datasets: [
+                      {
+                        data: graphValues,
+                      },
+                    ],
+                  }}
+                  width={Dimensions.get("window").width - 44}
+                  height={190}
+                  yAxisLabel="$"
+                  chartConfig={{
+                    backgroundColor: "#141418",
+                    backgroundGradientFrom: "#141418",
+                    backgroundGradientTo: "#141418",
+                    decimalPlaces: 0,
+                    color: () => (isPositiveChange ? "#4ADE80" : "#FF6B6B"),
+                    labelColor: () => "rgba(255, 255, 255, 0.7)",
+                    propsForDots: {
+                      r: "4",
+                    },
+                  }}
+                  bezier
+                  style={styles.lineChart}
+                />
+              ) : (
+                <Text style={styles.noGraphText}>
+                  Add more inventory Changes to build graph history!
+                </Text>
+              )} */}
+
+              {/** GRAPH WITH GIFTED-CHARTS */}
+              {graphData.length >= 2 ? (
+                <LineChart
+                  data={graphData}
+                  height={180}
+                  width={320}
+                  curved
+                  areaChart
+                  color={isPositiveChange ? "#4ADE80" : "#FF6B6B"}
+                  startFillColor={isPositiveChange ? "#4ADE80" : "#FF6B6B"}
+                  endFillColor="rgba(20, 20, 24, 0)"
+                  startOpacity={0.35}
+                  endOpacity={0}
+                  thickness={3}
+                  hideDataPoints={false} // dots in graph
+                  dataPointsColor={isPositiveChange ? "#4ADE80" : "#FF6B6B"}
+                  yAxisTextStyle={{ color: "rgba(255, 255, 255, 0.6)" }}
+                  xAxisLabelTextStyle={{ color: "rgba(255, 255, 255, 0.6)" }}
+                  rulesColor="rgba(255, 255, 255, 0.08)" // horizontal lines from dollar amount
+                  xAxisColor="rgba(255, 255, 255, 0.2)"
+                  yAxisColor="rgba(255, 255, 255, 0.2)"
+                  noOfSections={4}
+                />
+              ) : (
+                <Text style={styles.noGraphText}>
+                  Add more inventory changes to build graph history!
+                </Text>
+              )}
             </View>
           </View>
         )}
@@ -563,12 +707,14 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 
+  // money change
   sheetChangeText: {
     textAlign: "center",
     fontSize: 20,
     fontWeight: "800",
   },
 
+  // percentage change
   sheetPercentText: {
     textAlign: "center",
     fontSize: 34,
@@ -589,6 +735,22 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     zIndex: 20,
+  },
+
+  // THIS IS THE GRAPH STYLES
+  lineChart: {
+    marginTop: 20,
+    borderRadius: 18,
+    alignSelf: "center",
+    marginBottom: 80,
+  },
+
+  noGraphText: {
+    color: "rgba(255, 255, 255, 0.65)",
+    textAlign: "center",
+    marginTop: 20,
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   dropdownButton: {
